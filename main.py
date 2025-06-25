@@ -94,21 +94,21 @@ def on_message(client, userdata, msg):
         print("MQTT processing Error:", e)
 
 def mqtt_thread():
-    client = mqtt.Client()
-    client.username_pw_set("khoa2605", "Khoa2605")  #thông tin HiveMQ Cloud
-    client.on_connect = on_connect
-    client.on_disconnect = on_disconnect
-    client.on_message = on_message
-
-    client.tls_set()  # Kích hoạt TLS/SSL mặc định
-    client.connect("5ea4ea4499054653a5069edcfb38de4c.s1.eu.hivemq.cloud", 8883, 60)
-
     while True:
         try:
+            client = mqtt.Client()
+            client.username_pw_set("khoa2605", "Khoa2605")
+            client.on_connect = on_connect
+            client.on_disconnect = on_disconnect
+            client.on_message = on_message
+
+            client.tls_set()
+            client.connect("5ea4ea4499054653a5069edcfb38de4c.s1.eu.hivemq.cloud", 8883, 60)
             client.loop_forever()
         except Exception as e:
-            print("Error MQTT loop, try again after 5s:", e)
+            print("Error MQTT loop, retrying in 5s:", e)
             time.sleep(5)
+
 
 # Chạy MQTT ở luồng riêng
 threading.Thread(target=mqtt_thread, daemon=True).start()
