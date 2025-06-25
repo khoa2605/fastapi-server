@@ -29,12 +29,32 @@ history_data = []  # Danh sách lưu lịch sử để vẽ biểu đồ
 def get_data():
     return data
 
+
+@app.get("/")
+def read_root():
+    return {"message": "FastAPI server is running!"}
+mqtt_status = {
+    "connected": False,
+    "last_attempt": None
+}
+@app.get("/api/status")
+def get_status():
+    return {
+        "connected": mqtt_status["connected"],
+        "last_attempt": mqtt_status["last_attempt"]
+    }
+
+
+
 @app.get("/api/history")
 def get_history():
     return history_data[-50:]  # Trả về ... mẫu gần nhất (hoặc điều chỉnh tùy bạn)
 
 # MQTT callback
 def on_connect(client, userdata, flags, rc):
+    mqtt_status["connected"] = True
+    mqtt_status["last_attempt"] = time.time()
+    
     if rc == 0:
         print("[MQTT] Successfully connecting to broker.")
         client.subscribe("ESP32/data")
@@ -43,6 +63,9 @@ def on_connect(client, userdata, flags, rc):
 
 def on_disconnect(client, userdata, rc):
     print("[MQTT] Lost connected. Reconnecting...")
+    mqtt_status["connected"] = False
+    mqtt_status["last_attempt"] = time.time()
+
 
 # Hàm callback khi nhận MQTT
 def on_message(client, userdata, msg):
