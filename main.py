@@ -72,11 +72,11 @@ def on_disconnect(client, userdata, rc):
 def on_message(client, userdata, msg):
     payload = msg.payload.decode()
     print(f"[MQTT] Received topic: {msg.topic} at {time.strftime('%H:%M:%S')} – payload: {payload}")
-    data["dB_SPL"] = new_data.get("dB_SPL", data.get("dB_SPL", 0.0))
     try:
         new_data = json.loads(payload)
         data["temperature"] = new_data.get("temperature", data["temperature"])
         data["humidity"] = new_data.get("humidity", data["humidity"])
+        data["dB_SPL"] = new_data.get("dB_SPL", data.get("dB_SPL", 0.0))
         data["timestamp"] = time.time()  # Cập nhật thời gian
 
         # Lưu lịch sử
