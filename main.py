@@ -21,6 +21,7 @@ app.add_middleware(
 data = {
     "temperature": 0.0,
     "humidity": 0.0,
+    "dB_SPL": 0.0,
     "timestamp": time.time(),
 }
 history_data = []  # Danh sách lưu lịch sử để vẽ biểu đồ
@@ -71,6 +72,7 @@ def on_disconnect(client, userdata, rc):
 def on_message(client, userdata, msg):
     payload = msg.payload.decode()
     print(f"[MQTT] Received topic: {msg.topic} at {time.strftime('%H:%M:%S')} – payload: {payload}")
+    data["dB_SPL"] = new_data.get("dB_SPL", data.get("dB_SPL", 0.0))
     try:
         new_data = json.loads(payload)
         data["temperature"] = new_data.get("temperature", data["temperature"])
@@ -81,6 +83,7 @@ def on_message(client, userdata, msg):
         history_data.append({
             "temperature": data["temperature"],
             "humidity": data["humidity"],
+            "dB_SPL": data["dB_SPL"],
             "timestamp": data["timestamp"],
         })
 
@@ -110,9 +113,10 @@ def mqtt_thread():
             time.sleep(5)
 
 
-# Chạy MQTT ở luồng riêng
+# Chạy MQTT ở luồng riêng song song
 threading.Thread(target=mqtt_thread, daemon=True).start()
 
+#Pick Port từ Render
 if __name__ == "__main__":
     import uvicorn
     port = int(os.environ.get("PORT", 10000))
