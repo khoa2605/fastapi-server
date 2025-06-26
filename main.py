@@ -26,6 +26,10 @@ data = {
     "timestamp": time.time(),
 }
 history_data = []  # Danh sách lưu lịch sử để vẽ biểu đồ
+mqtt_status = {
+    "connected": False,
+    "last_attempt": None
+}
 
 clients = []  # Danh sách WebSocket clients đang kết nối
 
@@ -36,10 +40,7 @@ def get_data():
 @app.get("/")
 def read_root():
     return {"message": "FastAPI server is running!"}
-mqtt_status = {
-    "connected": False,
-    "last_attempt": None
-}
+
 @app.get("/api/status")
 def get_status():
     return {
