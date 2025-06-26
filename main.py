@@ -1,10 +1,11 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 import paho.mqtt.client as mqtt
 import threading
 import json
 import time
 import os
+import asyncio
 
 app = FastAPI()
 
@@ -26,10 +27,11 @@ data = {
 }
 history_data = []  # Danh sách lưu lịch sử để vẽ biểu đồ
 
+clients = []  # Danh sách WebSocket clients đang kết nối
+
 @app.get("/api/data")
 def get_data():
     return data
-
 
 @app.get("/")
 def read_root():
@@ -45,11 +47,23 @@ def get_status():
         "last_attempt": mqtt_status["last_attempt"]
     }
 
-
-
 @app.get("/api/history")
 def get_history():
     return history_data[-50:]  # Trả về ... mẫu gần nhất (hoặc điều chỉnh tùy bạn)
+
+# WebSocket endpoint
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    await websocket.accept()
+    clients.append(websocket)
+    print(f"[WebSocket] Client connected. Total clients: {len(clients)}")
+    try:
+        while True:
+            await websocket.receive_text()  # Chờ tin nhắn giữ kết nối
+    except:
+        print("[WebSocket] Client disconnected.")
+    finally:
+        clients.remove(websocket)
 
 # MQTT callback
 def on_connect(client, userdata, flags, rc):
@@ -77,7 +91,7 @@ def on_message(client, userdata, msg):
         data["temperature"] = new_data.get("temperature", data["temperature"])
         data["humidity"] = new_data.get("humidity", data["humidity"])
         data["dB_SPL"] = new_data.get("dB_SPL", data.get("dB_SPL", 0.0))
-        data["timestamp"] = time.time()  # Cập nhật thời gian
+        data["timestamp"] = time.time()
 
         # Lưu lịch sử
         history_data.append({
@@ -90,6 +104,13 @@ def on_message(client, userdata, msg):
         # Giới hạn số lượng lịch sử nếu cần
         if len(history_data) > 200:
             history_data.pop(0)
+
+        # Gửi dữ liệu đến tất cả WebSocket client đang kết nối
+        for ws in clients:
+            try:
+                asyncio.create_task(ws.send_json(data))
+            except:
+                pass  # Tránh crash nếu client đã ngắt kết nối
 
     except json.JSONDecodeError:
         print("JSON decode Error:", payload)
