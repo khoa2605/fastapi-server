@@ -66,6 +66,12 @@ async def websocket_endpoint(websocket: WebSocket):
     finally:
         clients.remove(websocket)
 
+@app.get("/api/ws_status")
+def get_ws_status():
+    return {
+        "connected_clients": len(clients)
+    }
+
 # MQTT callback
 def on_connect(client, userdata, flags, rc):
     mqtt_status["connected"] = True
