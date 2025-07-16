@@ -134,7 +134,7 @@ def mqtt_thread():
             client.on_message = on_message
 
             client.tls_set()
-            client.connect("5ea4ea4499054653a5069edcfb38de4c.s1.eu.hivemq.cloud", 8883, 60)
+            client.connect("a7c37bd561b24d7a80516c1dd10f0b20.s1.eu.hivemq.cloud", 8883, 60)
             client.loop_forever()
         except Exception as e:
             print("Error MQTT loop, retrying in 5s:", e)
